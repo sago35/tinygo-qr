@@ -1,0 +1,44 @@
+name: build-and-deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install TinyGo
+        run: |
+          wget https://github.com/tinygo-org/tinygo/releases/download/v0.40.1/tinygo0.40.1.linux-amd64.tar.gz
+          tar -xzf tinygo0.40.1.linux-amd64.tar.gz
+          echo "$PWD/tinygo/bin" >> $GITHUB_PATH
+
+      - name: Verify
+        run: tinygo version
+
+      - name: Build wasm
+        run: |
+          mkdir dist
+          tinygo build -o dist/main.wasm -target wasm --no-debug --panic=trap --gc=leaking .
+
+      - name: Copy wasm_exec.js
+        run: |
+          cp $(tinygo env TINYGOROOT)/targets/wasm_exec.js dist/
+
+      - name: Copy HTML
+        run: cp index.html dist/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
