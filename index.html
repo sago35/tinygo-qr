@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>TinyGo QR</title>
+        <link rel="icon" href="data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='white'/><rect x='10' y='1' width='5' height='5' fill='black'/><rect x='1' y='10' width='5' height='5' fill='black'/></svg>">
+    </head>
+    <body>
+        TinyGo QR - URL to QR instantly
+
+        <form onsubmit="onSubmit(event)">
+            <input id="url" placeholder="https://example.com" />
+            <button type="submit">Generate QR</button>
+        </form>
+
+        <br><br>
+        <img id="qr" />
+
+        <script src="wasm_exec.js"></script>
+        <script>
+            const go = new Go();
+
+            let wasm;
+
+            WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+                .then(result => {
+                    wasm = result.instance;
+                    go.run(wasm);
+                });
+
+            function onSubmit(e) {
+                e.preventDefault();
+
+                const url = document.getElementById("url").value;
+
+                const bytes = generateQR(url);
+                const blob = new Blob([bytes], { type: "image/png" });
+
+                const img = document.getElementById("qr");
+                img.src = URL.createObjectURL(blob);
+            }
+        </script>
+
+    </body>
+</html>
